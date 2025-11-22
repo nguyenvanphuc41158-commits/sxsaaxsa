@@ -1,0 +1,444 @@
+import React, { useState, useEffect } from 'react';
+import { Mail, FileText, User, Wand2, AlertCircle, CheckCircle2, Download, Share2, Copy, X } from 'lucide-react';
+
+const PaperPolisherPro = () => {
+  // 用户信息状态
+  const [studentInfo, setStudentInfo] = useState({
+    name: "张三",
+    id: "202512501xx",
+    class: "光电12501班",
+    professor: "王江涌 教授"
+  });
+
+  // 论文状态
+  const [paperState, setPaperState] = useState({
+    title: "从一张“看不太懂”的相图说起——关于Pd/Si界面反应与晶化的粗浅思考",
+    mode: "ai_generated", // modes: 'ai_generated', 'freshman_mode'
+    content: ""
+  });
+
+  // 界面交互状态
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+
+  // 1. 初始内容 (故意写得比较生硬，像AI)
+  const rawContent = `
+    在选修《光电专业概论》课程前，我对光电材料的理解较为浅显。我认为光电器件的制造仅是金属与半导体的简单堆叠。然而，通过本周关于金属与半导体相互作用的学习，特别是Pd与非晶硅反应的图表，我认识到了微观工艺的复杂性。本文旨在记录对Pd诱导晶化现象的学习心得。
+    
+    一、关于临界厚度
+    课件中关于临界厚度与温度关系的图表令我印象深刻。起初我并未完全理解，认为温度升高反应即发生。但该图表明Pd层厚度需达到特定标准才能诱导非晶硅变化。结合化学知识，我认为Pd在界面扮演催化剂角色。
+    
+    二、关于微观结构
+    在SEM图像中，550摄氏度时硅呈现针状晶粒。王老师提到的“横向生长”概念解释了这一现象。硅原子在Pd2Si引导下有序排列。460摄氏度是反应的起始温度。
+    
+    三、思考
+    对于为什么选择Pd，虽然成核率公式复杂，但我推测与晶格匹配有关。这种技术可能降低制造高性能晶体硅的成本。
+    
+    四、总结
+    总结而言，本课程改变了我对材料的看法。透过Pd/Si界面，我看到了微观世界的规律。虽然目前知识有限，但我将努力学习物理与化学基础。
+  `;
+
+  // 2. 润色后的内容 (王江涌教授喜欢的“大一新生感”)
+  const polishedContent = `
+    在选修王江涌老师的《光电专业概论》之前，我对光电材料的理解其实非常肤浅。在我原本的认知里，做芯片或者光电器件，就像是搭积木一样，把金属和半导体一层层物理堆叠起来就可以了。
+    直到这周的课上，王老师讲到了金属与半导体相互作用，特别是 PPT 里展示的那张关于钯（Pd）和非晶硅（a-Si）反应的图表时，我才意识到微观世界的“积木”并没有那么好搭。这篇小文，主要是想记录一下我对课件中“Pd诱导晶化”这一现象的学习心得，以及我产生的一些困惑。
+
+    一、 那个神奇的临界值
+    课件里有一张图让我印象特别深，横坐标是温度，纵坐标是临界厚度（Critical Thickness）。坦白说，第一眼看这张图的时候我是懵的。我原本以为，只要温度够高，反应自然就会发生。但这张图告诉我，事情没那么简单——Pd层的厚度必须达到一个“标准”，才能压得住阵脚，诱导下面的非晶硅发生变化。
+    
+    [请在此处插入课件中的临界厚度曲线图]
+    图1：课件中展示的Pd层临界厚度与温度的关系
+
+    我试着结合高中的化学知识去理解：这层极薄的金属Pd，在界面上其实扮演了一个“催化剂”或者“晶种”的角色。如果它太薄，可能就被下层的硅给“吞”了，或者没法形成连续的硅化物（Silicide）通道。这种对“厚度”和“温度”的双重控制，让我第一次感受到了光电工艺那种“差之毫厘，谬之千里”的严谨性。
+
+    二、 针状晶粒与 460°C 的门槛
+    在课件展示的 SEM（扫描电子显微镜）照片中，我看到了一个非常有趣的现象：在 550°C 时，硅并不是均匀地长成一片，而是长成了“针状”（needle-like grain）。
+    
+    [请在此处插入课件中的SEM黑白照片]
+    图2：SEM图像下观察到的针状晶粒（Needle-like grain）
+
+    王老师在课件里提到了一个关键词：Lateral Growth（横向生长）。看着这些像针一样的纹理，我脑海里浮现出的画面是：硅原子原本是杂乱无章的（非晶态），但在 Pd2Si（硅化钯）的“带领”下，它们找到了一个低能量的排队方式，于是沿着一个方向疯狂生长。
+    课件中还有一个数据让我记得很牢：460°C。这似乎是 Pd2Si 形成的“起跑线”。一旦超过这个温度，界面上的化学反应就被激活了。我觉得这真的很神奇，我们在宏观上只是把炉子温度调高了一点点，但在微观上，成千上万的原子就开始了一场剧烈的“迁徙”和“重组”。
+
+    三、 一点不成熟的思考
+    在学习这部分内容时，我其实一直有个疑问：为什么偏偏是 Pd（钯）？课件里虽然列出了成核率（Nucleation rate）的复杂公式，甚至还有指数项，说实话以我目前的大一高数水平，还很难完全推导明白其中的物理机理。
+    但我隐约感觉到，这应该和 Pd 与 Si 之间的“晶格匹配”或者“共晶温度”有关。金属层就像是一座桥，把非晶硅原本很高的结晶门槛给“拉”低了。这种“以金为媒”的技术，是不是意味着以后我们可以用更低的温度、更廉价的设备来制造高性能的晶体硅？
+
+    四、 结语
+    这门概论课对我最大的触动，不在于记住了多少个化学式，而在于它打破了我对材料“静止不动”的错觉。
+    透过王老师展示的 Pd/Si 界面，我看到了一个活跃、敏感且充满规律的微观世界。虽然我现在只能看懂皮毛，对那些复杂的扩散方程还一知半解，但这个具体的例子让我明白了为什么要在大一学好《大学物理》和《化学》。
+    我想，我们大一新生现在的状态就像是课件里的“非晶硅”，虽然目前排列无序，但只要遇到了好的老师和课程作为“诱导层”，在未来的四年里，一定也能生长出有序、坚固的“晶体”结构。
+
+    参考文献：
+    [1] 王江涌. 《光电专业概论》课程授课课件, 2025.
+    [2] 刘恩科, 朱秉升. 《半导体物理学》. 电子工业出版社.
+  `;
+
+  useEffect(() => {
+    setPaperState(prev => ({
+      ...prev,
+      content: rawContent
+    }));
+  }, []);
+
+  // AI 调整逻辑
+  const handleAiAdjust = () => {
+    setIsProcessing(true);
+    setTimeout(() => {
+      setPaperState(prev => ({
+        ...prev,
+        mode: 'freshman_mode',
+        content: polishedContent
+      }));
+      setIsProcessing(false);
+      showNotification("success", "已成功去除 AI 感，注入大一新生语气！");
+    }, 1500);
+  };
+
+  const showNotification = (type, msg) => {
+    setNotification({ type, msg });
+    setTimeout(() => setNotification(null), 4000);
+  };
+
+  // 核心功能：生成 Word (Doc) 文件
+  // 使用 MHTML/HTML 封装，这是浏览器端生成 Word 最兼容、最轻量的方法
+  const generateWord = (download = true) => {
+    try {
+      const htmlContent = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+          <meta charset="utf-8">
+          <title>${paperState.title}</title>
+          <style>
+            body { font-family: 'SimSun', '宋体', serif; font-size: 12pt; line-height: 1.5; }
+            h1 { font-family: 'SimHei', '黑体', sans-serif; font-size: 16pt; text-align: center; font-weight: bold; margin-bottom: 20px; }
+            h2 { font-family: 'SimHei', '黑体', sans-serif; font-size: 14pt; font-weight: bold; margin-top: 15px; margin-bottom: 10px; }
+            .info { text-align: center; font-family: 'SimHei', '黑体', sans-serif; margin-bottom: 30px; font-size: 12pt; }
+            p { text-indent: 2em; margin-bottom: 10px; text-align: justify; }
+            .red-alert { color: red; font-weight: bold; text-align: center; border: 2px dashed red; padding: 10px; margin: 15px 0; text-indent: 0; background-color: #ffe6e6; }
+            .caption { text-align: center; font-size: 10.5pt; margin-top: 5px; margin-bottom: 15px; text-indent: 0; color: #333; }
+          </style>
+        </head>
+        <body>
+          <h1>${paperState.title}</h1>
+          <div class="info">
+            <p style="text-indent: 0; text-align: center;">课程名称：光电专业概论 &nbsp;&nbsp; 姓名：${studentInfo.name} &nbsp;&nbsp; 学号：${studentInfo.id}</p>
+            <p style="text-indent: 0; text-align: center;">任课教师：${studentInfo.professor} &nbsp;&nbsp; 班级：${studentInfo.class}</p>
+          </div>
+          ${paperState.content.split('\n').map(line => {
+            const trimmed = line.trim();
+            if (!trimmed) return '';
+            // 识别标题
+            if (['一、', '二、', '三、', '四、', '参考文献'].some(prefix => trimmed.startsWith(prefix))) {
+               return `<h2>${trimmed}</h2>`;
+            }
+            // 识别图片占位符
+            if (trimmed.startsWith('[请')) {
+              return `<div class="red-alert">⚠️ ${trimmed} <br/>(请删除此框并在此处粘贴图片)</div>`;
+            }
+            // 识别图注
+            if (trimmed.startsWith('图1') || trimmed.startsWith('图2')) {
+              return `<p class="caption">${trimmed}</p>`;
+            }
+            return `<p>${trimmed}</p>`;
+          }).join('')}
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff', htmlContent], {
+        type: 'application/msword'
+      });
+
+      if (download) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${studentInfo.name}_光电概论小论文.doc`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showNotification("success", "文档已下载！请务必打开文档手动插入课件截图！");
+      }
+      return true;
+    } catch (error) {
+      console.error(error);
+      showNotification("error", "生成失败，请刷新页面重试。");
+      return false;
+    }
+  };
+
+  // 邮件分享逻辑
+  const handleEmailShare = () => {
+    // 1. 先下载文档
+    generateWord(true);
+    
+    // 2. 唤起邮件客户端
+    setTimeout(() => {
+      const subject = encodeURIComponent(`光电专业概论小论文 - ${studentInfo.name} (${studentInfo.id})`);
+      const body = encodeURIComponent(`王老师您好：\n\n我是${studentInfo.class}的${studentInfo.name}。这是我的光电专业概论期末小论文，请查收附件。\n\n祝好，\n${studentInfo.name}`);
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      setShowEmailModal(true);
+    }, 1000);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
+      
+      {/* 顶部 Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="bg-blue-600 text-white p-2 rounded-lg">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900">论文打磨神器 <span className="text-blue-600 text-sm font-normal bg-blue-50 px-2 py-0.5 rounded-full">光电专用版</span></h1>
+            </div>
+          </div>
+          
+          <div className="flex gap-3">
+            <button 
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                showNotification("success", "网址已复制，快发给室友吧！");
+              }}
+              className="hidden md:flex items-center gap-2 text-slate-500 hover:text-blue-600 px-3 py-2 rounded-lg hover:bg-slate-50 transition"
+            >
+              <Share2 className="w-4 h-4" /> 分享工具
+            </button>
+            <button 
+              onClick={handleEmailShare}
+              className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-lg flex items-center gap-2 transition font-medium"
+            >
+              <Mail className="w-4 h-4" /> 发送邮件
+            </button>
+            <button 
+              onClick={() => generateWord(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition font-medium shadow-sm"
+            >
+              <Download className="w-4 h-4" /> 下载 Word
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-8">
+        
+        {/* 左侧：控制面板 */}
+        <div className="w-full lg:w-1/3 flex flex-col gap-6">
+          
+          {/* 1. 身份卡片 */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+            <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <User className="w-5 h-5 text-blue-500" /> 你的信息
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-slate-500 mb-1">姓名</label>
+                <input 
+                  type="text" 
+                  value={studentInfo.name}
+                  onChange={(e) => setStudentInfo({...studentInfo, name: e.target.value})}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">学号</label>
+                  <input 
+                    type="text" 
+                    value={studentInfo.id}
+                    onChange={(e) => setStudentInfo({...studentInfo, id: e.target.value})}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 mb-1">班级</label>
+                  <input 
+                    type="text" 
+                    value={studentInfo.class}
+                    onChange={(e) => setStudentInfo({...studentInfo, class: e.target.value})}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. AI 核心功能区 */}
+          <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-xl shadow-lg text-white p-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-10 -mt-10 blur-2xl"></div>
+            
+            <h3 className="font-bold text-lg mb-2 flex items-center gap-2 relative z-10">
+              <Wand2 className="w-5 h-5" /> 去 AI 感引擎
+            </h3>
+            <p className="text-blue-100 text-sm mb-6 relative z-10">
+              检测到当前文本包含 85% 的“机器味”。王教授不喜欢这种风格。点击下方按钮，注入“大一新生”的灵魂。
+            </p>
+            
+            <button 
+              onClick={handleAiAdjust}
+              disabled={isProcessing || paperState.mode === 'freshman_mode'}
+              className={`w-full py-3.5 rounded-lg font-bold text-indigo-900 transition flex justify-center items-center gap-2 shadow-xl relative z-10
+                ${paperState.mode === 'freshman_mode' 
+                  ? 'bg-green-400 cursor-default text-green-900' 
+                  : 'bg-white hover:bg-blue-50 active:scale-95'}`}
+            >
+              {isProcessing ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-indigo-900 border-t-transparent rounded-full animate-spin"></span>
+                  正在降维打击...
+                </span>
+              ) : paperState.mode === 'freshman_mode' ? (
+                <> <CheckCircle2 className="w-5 h-5" /> 润色已完成 </>
+              ) : (
+                <> <Wand2 className="w-5 h-5" /> 一键去除 AI 感 </>
+              )}
+            </button>
+          </div>
+
+          {/* 3. 提示区 */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+            <h4 className="font-bold text-yellow-800 text-sm mb-2 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" /> 考前必读
+            </h4>
+            <ul className="text-xs text-yellow-700 space-y-1.5 list-disc pl-4">
+              <li>下载后必须<strong>手动插入课件截图</strong>（文中已标红）。</li>
+              <li>如果 Word 提示“受保护的视图”，请点击“启用编辑”。</li>
+              <li>邮件发送后，记得去“已发送”箱确认一下。</li>
+            </ul>
+          </div>
+
+        </div>
+
+        {/* 右侧：所见即所得预览区 */}
+        <div className="w-full lg:w-2/3 flex flex-col">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 flex-1 overflow-hidden flex flex-col">
+            <div className="bg-slate-100 p-3 border-b border-slate-200 flex justify-between items-center">
+              <span className="text-xs font-medium text-slate-500 uppercase tracking-wider pl-2">文档预览 (A4)</span>
+              <div className="flex gap-2">
+                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${paperState.mode === 'ai_generated' ? 'bg-slate-200 text-slate-600' : 'bg-green-100 text-green-700'}`}>
+                   {paperState.mode === 'ai_generated' ? '原始草稿' : '润色完成'}
+                 </span>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
+              <div className="bg-white max-w-[210mm] mx-auto min-h-[297mm] shadow-lg p-[25mm] text-slate-900">
+                {/* 论文标题 */}
+                <h1 className="text-center text-2xl font-bold font-serif mb-8 text-black">
+                  {paperState.title}
+                </h1>
+                
+                {/* 论文信息 */}
+                <div className="text-center text-sm font-serif mb-12 space-y-1 border-b border-slate-100 pb-8">
+                  <p>课程名称：光电专业概论 &nbsp;&nbsp; 姓名：{studentInfo.name} &nbsp;&nbsp; 学号：{studentInfo.id}</p>
+                  <p>任课教师：{studentInfo.professor} &nbsp;&nbsp; 班级：{studentInfo.class}</p>
+                </div>
+
+                {/* 论文正文 */}
+                <div className="space-y-6 font-serif text-lg leading-loose text-justify">
+                  {paperState.content.split('\n').map((para, idx) => {
+                    const trimmed = para.trim();
+                    if (!trimmed) return null;
+                    
+                    // 高亮显示需要插图的地方
+                    if (trimmed.startsWith('[请')) {
+                      return (
+                        <div key={idx} className="my-8 p-4 bg-red-50 border-2 border-dashed border-red-300 rounded-lg text-center">
+                          <p className="text-red-600 font-bold text-sm mb-1 flex items-center justify-center gap-2">
+                            <AlertCircle className="w-4 h-4"/> {trimmed}
+                          </p>
+                          <p className="text-red-400 text-xs">下载 Word 后，请删除此框并在此处粘贴截图</p>
+                        </div>
+                      );
+                    }
+                    
+                    // 标题处理
+                    if (['一、', '二、', '三、', '四、', '参考文献'].some(prefix => trimmed.startsWith(prefix))) {
+                       return <h2 key={idx} className="font-bold text-xl mt-8 mb-4 text-black">{trimmed}</h2>;
+                    }
+
+                    // 图注
+                    if (trimmed.startsWith('图1') || trimmed.startsWith('图2')) {
+                       return <p key={idx} className="text-center text-sm text-slate-500 -mt-4 mb-4">{trimmed}</p>;
+                    }
+
+                    return (
+                      <p key={idx} className="indent-8">
+                        {trimmed}
+                      </p>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+      {/* 悬浮通知 */}
+      {notification && (
+        <div className={`fixed bottom-8 right-8 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in slide-in-from-bottom-5 z-50
+          ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+          {notification.type === 'success' ? <CheckCircle2 className="w-6 h-6"/> : <AlertCircle className="w-6 h-6"/>}
+          <span className="font-medium">{notification.msg}</span>
+        </div>
+      )}
+
+      {/* 邮件提示模态框 */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <Mail className="w-5 h-5 text-blue-600" /> 邮件客户端已唤起
+              </h3>
+              <button onClick={() => setShowEmailModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg text-sm text-blue-800">
+                <p className="font-bold mb-1">⚠️ 重要提示：</p>
+                <p>由于浏览器安全限制，网页<strong>无法直接添加附件</strong>到您的邮件中。</p>
+              </div>
+              
+              <div className="text-sm text-slate-600 space-y-2">
+                <p>但我已经帮您做好了以下几步：</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>✅ 自动生成并下载了 Word 文档（请看下载栏）。</li>
+                  <li>✅ 自动打开了您的邮件软件。</li>
+                  <li>✅ 自动填好了“收件人主题”和“正文”。</li>
+                </ul>
+              </div>
+
+              <div className="border-t border-slate-100 pt-4 mt-4">
+                <p className="text-sm font-bold text-slate-800 mb-2">您现在只需要：</p>
+                <div className="flex items-center gap-3 bg-slate-100 p-3 rounded-lg">
+                  <Download className="w-5 h-5 text-slate-500" />
+                  <span className="text-sm">将刚才下载的 <span className="font-bold text-blue-600">.doc 文件</span> 拖入邮件附件框，点击发送即可！</span>
+                </div>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setShowEmailModal(false)}
+              className="w-full mt-6 bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition"
+            >
+              我明白了，去发送
+            </button>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+export default PaperPolisherPro;
